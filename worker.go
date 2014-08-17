@@ -23,6 +23,7 @@ type WorkerInterface interface {
 func (w *Worker) Init(ctx *Context, name string) {
     w.Ctx = ctx
     w.WorkerName = name
+    //Debugger.Debug("init")
 }
 
 func (w *Worker) Main() error {

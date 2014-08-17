@@ -22,11 +22,8 @@ type Environment struct {
     PidFile       string // pidfile abs path
 }
 
-var (
-    Env *Environment
-)
-
 func init() { //初始化环境变量,配置信息
+    Env = new(Environment)
     workPath, _ := os.Getwd()
     Env.WorkPath, _ = filepath.Abs(workPath)
     Env.AppPath, _ = filepath.Abs(filepath.Dir(os.Args[0]))
@@ -67,8 +64,10 @@ func init() { //初始化环境变量,配置信息
     Debugger = logs.NewLogger(2046)
     var err error
     if Env.Daemonize {
+        //fmt.Println("file")
         err = Debugger.SetLogger("file", `{"filename":"logs/debug.log"}`)
     } else {
+        //fmt.Println("console")
         err = Debugger.SetLogger("console", "")
     }
     if err != nil {
@@ -77,13 +76,16 @@ func init() { //初始化环境变量,配置信息
     Debugger.EnableFuncCallDepth(true)
     Debugger.SetLogFuncCallDepth(3)
     Debugger.SetLevel(Env.DebugLevel)
+    //Debugger.Debug("hihi")
 
-    if configErr != nil && !os.IsNotExist(configErr) {
+    //if configErr != nil && !os.IsNotExist(configErr) {
+    if configErr != nil {
         //放在这里才能使用Logger函数
-        Debugger.Log("Info", "%v", err)
+        Debugger.Log("Warn", "%v", configErr)
     }
 
     //Ctx
+    Ctx = NewContext()
     Ctx.Env = Env
     Ctx.Cfg = AppConfig
     Ctx.Logger = Debugger

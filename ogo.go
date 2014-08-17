@@ -9,6 +9,7 @@ import (
     "path/filepath"
     "reflect"
     "runtime"
+    "time"
 
     "github.com/VividCortex/godaemon"
     "github.com/nightlyone/lockfile"
@@ -28,9 +29,16 @@ type Context struct {
 
 var (
     Ctx       *Context
+    Env       *Environment
     AppConfig config.ConfigContainer
     Debugger  *logs.OLogger
 )
+
+func NewContext() *Context {
+    return &Context{
+        Workers: make(map[string]*Worker),
+    }
+}
 
 // Run ogo application.
 func Run() {
@@ -91,6 +99,8 @@ func Run() {
     }
 
     if mainErr != nil {
-        Debugger.Critical("Main error: ", mainErr)
+        Debugger.Debug("Main error: %v", mainErr)
     }
+    //睡一段时间是等logger写信息
+    time.Sleep(1000 * time.Microsecond)
 }

@@ -142,8 +142,17 @@ func (w *FileLogWriter) WriteMsg(msg string, level int) error {
 }
 
 func (w *FileLogWriter) createLogFile() (*os.File, error) {
+    dir := filepath.Dir(w.Filename)
+    if _, err := os.Stat(dir); err != nil {
+        if os.IsNotExist(err) {
+            //mkdir
+            if err := os.Mkdir(dir, 0755); err != nil {
+                return nil, err
+            }
+        }
+    }
     // Open the log file
-    fd, err := os.OpenFile(w.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0660)
+    fd, err := os.OpenFile(w.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0755)
     return fd, err
 }
 
