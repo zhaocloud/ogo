@@ -10,10 +10,10 @@ import (
     "reflect"
     "runtime"
 
-    "./libs/config"
-    "./libs/logs"
     "github.com/VividCortex/godaemon"
     "github.com/nightlyone/lockfile"
+    "github.com/zhaocloud/ogo/libs/config"
+    "github.com/zhaocloud/ogo/libs/logs"
 )
 
 // ogo daemon framework version.

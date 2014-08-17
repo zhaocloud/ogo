@@ -6,9 +6,9 @@ import (
     "path/filepath"
     "runtime"
 
-    "./libs/config"
-    "./libs/logs"
-    "./utils"
+    "github.com/zhaocloud/ogo/libs/config"
+    "github.com/zhaocloud/ogo/libs/logs"
+    "github.com/zhaocloud/ogo/utils"
 )
 
 type Environment struct {

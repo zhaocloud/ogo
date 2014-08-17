@@ -6,7 +6,7 @@ import (
     "fmt"
     "strings"
 
-    "./libs/logs"
+    "github.com/zhaocloud/ogo/libs/logs"
 )
 
 //立即输出
