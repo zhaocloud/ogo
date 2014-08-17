@@ -28,7 +28,6 @@ type Context struct {
 
 var (
     Ctx       *Context
-    Env       *Environment
     AppConfig config.ConfigContainer
     Debugger  *logs.OLogger
 )

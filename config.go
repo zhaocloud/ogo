@@ -22,6 +22,10 @@ type Environment struct {
     PidFile       string // pidfile abs path
 }
 
+var (
+    Env *Environment
+)
+
 func init() { //初始化环境变量,配置信息
     workPath, _ := os.Getwd()
     Env.WorkPath, _ = filepath.Abs(workPath)
