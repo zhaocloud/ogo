@@ -17,7 +17,7 @@ import (
     "github.com/zhaocloud/ogo/libs/logs"
 )
 
-// ogo daemon framework version.
+// ogo daemoin framework version.
 const VERSION = "0.1.0"
 
 type Context struct {
@@ -78,29 +78,27 @@ func Run() {
     }
 
     var mainErr error
-    //spawn worker,worker名字从配置文件来
-    if workerName := AppConfig.String("Worker"); workerName != "" {
-        Debugger.Debug("will run worker: %v", workerName)
-        if worker, ok := Ctx.Workers[workerName]; ok {
-            vw := reflect.New(worker.WorkerType)
-            execWorker, ok := vw.Interface().(WorkerInterface)
-            if !ok {
-                panic("worker is not WorkerInterface")
-            }
 
-            //Init
-            execWorker.Init(Ctx, workerName)
-
-            //Main
-            mainErr = execWorker.Main()
+    Debugger.Debug("will run worker: %v", Env.Worker)
+    if worker, ok := Ctx.Workers[Env.Worker]; ok {
+        vw := reflect.New(worker.WorkerType)
+        execWorker, ok := vw.Interface().(WorkerInterface)
+        if !ok {
+            panic("worker is not WorkerInterface")
         }
+
+        //Init
+        execWorker.Init(Ctx, Env.Worker)
+
+        //Main
+        mainErr = execWorker.Main()
     } else {
-        mainErr = errors.New("not defined worker in cfg")
+        mainErr = errors.New("not found worker: " + Env.Worker)
     }
 
     if mainErr != nil {
-        Debugger.Debug("Main error: %v", mainErr)
+        panic(mainErr)
     }
-    //睡一段时间是等logger写信息
+    //睡一段时间再结束
     time.Sleep(1000 * time.Microsecond)
 }

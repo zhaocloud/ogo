@@ -5,6 +5,7 @@ import (
     "os"
     "path/filepath"
     "runtime"
+    "strings"
 
     "github.com/zhaocloud/ogo/libs/config"
     "github.com/zhaocloud/ogo/libs/logs"
@@ -15,6 +16,7 @@ type Environment struct {
     WorkPath      string // working path(abs)
     AppPath       string // application path
     ProcName      string // proc name
+    Worker        string // worker name
     AppConfigPath string // config file path
     RunMode       string // run mode, "dev" or "prod"
     Daemonize     bool   // daemonize or not
@@ -27,7 +29,8 @@ func init() { //初始化环境变量,配置信息
     workPath, _ := os.Getwd()
     Env.WorkPath, _ = filepath.Abs(workPath)
     Env.AppPath, _ = filepath.Abs(filepath.Dir(os.Args[0]))
-    Env.ProcName = filepath.Base(os.Args[0])
+    Env.ProcName = filepath.Base(os.Args[0])   //程序名字
+    Env.Worker = strings.ToLower(Env.ProcName) //worker默认为procname,小写
 
     //默认配置文件是 conf/{ProcName}.conf
     Env.AppConfigPath = filepath.Join(Env.AppPath, "conf", Env.ProcName+".conf")
@@ -103,7 +106,10 @@ func ParseConfig() (err error) {
             Env.RunMode = runmode
         }
 
-        //added by odin
+        if workerName := AppConfig.String("Worker"); workerName != "" {
+            Env.Worker = workerName
+        }
+
         if daemonize, err := AppConfig.Bool("Daemonize"); err == nil {
             Env.Daemonize = daemonize
         }
