@@ -77,7 +77,7 @@ func init() { //初始化环境变量,配置信息
         fmt.Println("init logger error:", err)
     }
     Debugger.EnableFuncCallDepth(true)
-    Debugger.SetLogFuncCallDepth(3)
+    Debugger.SetLogFuncCallDepth(2)
     Debugger.SetLevel(Env.DebugLevel)
     //Debugger.Debug("hihi")
 
