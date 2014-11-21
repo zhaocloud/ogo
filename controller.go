@@ -7,80 +7,158 @@ import (
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
 	"net/http"
-	//"strings"
+	"strings"
 )
+
+type Handler func(c *HttpContext)
+
+type Route struct {
+	Pattern string
+	Method  string
+	Handler Handler
+}
 
 type Controller struct {
 	Endpoint string
-	//Routes   map[string]Method
-}
-
-type C struct { // same as goji/web C, reference: http://golang.org/ref/spec#Type_identity
-	URLParams map[string]string
-	Env       map[string]interface{}
+	Routes   map[string]*Route
 }
 
 type ControllerInterface interface {
-	Get(c web.C, w http.ResponseWriter, r *http.Request)
-	Post(c web.C, w http.ResponseWriter, r *http.Request)
-	Put(c web.C, w http.ResponseWriter, r *http.Request)
-	Delete(c web.C, w http.ResponseWriter, r *http.Request)
-	Patch(c web.C, w http.ResponseWriter, r *http.Request)
-	Head(c web.C, w http.ResponseWriter, r *http.Request)
-	DefaultRoutes(c ControllerInterface)
-	//DefaultRoutes()
+	Get(c *HttpContext)
+	Post(c *HttpContext)
+	Put(c *HttpContext)
+	Delete(c *HttpContext)
+	Patch(c *HttpContext)
+	Head(c *HttpContext)
 }
 
-func (ctr *Controller) Get(c web.C, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+func NewRoute(p string, m string, h Handler) *Route {
+	return &Route{
+		Pattern: p,
+		Method:  m,
+		Handler: h,
+	}
 }
-func (ctr *Controller) Post(c web.C, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+
+// 封装
+func handlerWrap(f Handler) web.HandlerFunc { //这里封装了webC到本地的结构中
+	return func(c web.C, w http.ResponseWriter, r *http.Request) {
+		f(newContext(c, w, r))
+	}
 }
-func (ctr *Controller) Put(c web.C, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+
+func (ctr *Controller) Get(c *HttpContext) {
+	http.Error(c.Response, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
-func (ctr *Controller) Delete(c web.C, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+func (ctr *Controller) Post(c *HttpContext) {
+	http.Error(c.Response, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
-func (ctr *Controller) Patch(c web.C, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+func (ctr *Controller) Put(c *HttpContext) {
+	http.Error(c.Response, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
-func (ctr *Controller) Head(c web.C, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+func (ctr *Controller) Delete(c *HttpContext) {
+	http.Error(c.Response, "Method Not Allowed", http.StatusMethodNotAllowed)
+}
+func (ctr *Controller) Patch(c *HttpContext) {
+	http.Error(c.Response, "Method Not Allowed", http.StatusMethodNotAllowed)
+}
+func (ctr *Controller) Head(c *HttpContext) {
+	http.Error(c.Response, "Method Not Allowed", http.StatusMethodNotAllowed)
+}
+
+func (ctr *Controller) AddRoute(rt *Route) {
+	switch strings.ToLower(rt.Method) {
+	case "get":
+		ctr.RouteGet(rt)
+	case "post":
+		ctr.RoutePost(rt)
+	case "put":
+		ctr.RoutePut(rt)
+	case "delete":
+		ctr.RouteDelete(rt)
+	case "patch":
+		ctr.RoutePatch(rt)
+	case "head":
+		ctr.RouteHead(rt)
+	default:
+		// unknow method
+	}
 }
 
 // controller default route
-//func DefaultRoutes(c ControllerInterface) {
+// 默认路由, 如果已经定义了则忽略，没有定义则加上
 func (ctr *Controller) DefaultRoutes(c ControllerInterface) {
-	//func (c *Controller) DefaultRoutes() {
-	goji.Get("/"+ctr.Endpoint+"/:id", c.Get)
-	goji.Get("/"+ctr.Endpoint, c.Get)
-	goji.Post("/"+ctr.Endpoint, c.Post)
-	goji.Delete("/"+ctr.Endpoint+"/:id", c.Delete)
-	goji.Patch("/"+ctr.Endpoint+"/:id", c.Get)
-	goji.Put("/"+ctr.Endpoint+"/:id", c.Put)
+	// GET /{endpoint}
+	ctr.RouteGet(NewRoute("/"+ctr.Endpoint, "GET", c.Get))
+
+	// GET /{endpoint}/{id}
+	ctr.RouteGet(NewRoute("/"+ctr.Endpoint+"/:_id_", "GET", c.Get))
+
+	// POST /{endpoint}
+	ctr.RoutePost(NewRoute("/"+ctr.Endpoint, "POST", c.Post))
+
+	// DELETE /{endpoint}/{id}
+	ctr.RouteDelete(NewRoute("/"+ctr.Endpoint+"/:_id_", "DELETE", c.Delete))
+
+	// PATCH /{endpoint}/{id}
+	ctr.RouteDelete(NewRoute("/"+ctr.Endpoint+"/:_id_", "PATCH", c.Patch))
+
+	// PUT /{endpoint}/{id}
+	ctr.RouteDelete(NewRoute("/"+ctr.Endpoint+"/:_id_", "PUT", c.Put))
+
 }
 
-func RouteGet(p interface{}, h interface{}) {
-	goji.Get(p, h)
+func (ctr *Controller) RouteGet(rt *Route) {
+	key := strings.ToUpper(rt.Method) + " " + rt.Pattern
+	if _, ok := ctr.Routes[key]; ok {
+		// exists
+	} else {
+		goji.Get(rt.Pattern, handlerWrap(rt.Handler))
+		ctr.Routes[key] = rt
+	}
 }
-func RoutePost(p interface{}, h interface{}) {
-	goji.Post(p, h)
+func (ctr *Controller) RoutePost(rt *Route) {
+	key := strings.ToUpper(rt.Method) + " " + rt.Pattern
+	if _, ok := ctr.Routes[key]; ok {
+		// exists
+	} else {
+		goji.Post(rt.Pattern, handlerWrap(rt.Handler))
+		ctr.Routes[key] = rt
+	}
 }
-func RoutePut(p interface{}, h interface{}) {
-	goji.Put(p, h)
+func (ctr *Controller) RoutePut(rt *Route) {
+	key := strings.ToUpper(rt.Method) + " " + rt.Pattern
+	if _, ok := ctr.Routes[key]; ok {
+		// exists
+	} else {
+		goji.Put(rt.Pattern, handlerWrap(rt.Handler))
+		ctr.Routes[key] = rt
+	}
 }
-func RouteDelete(p interface{}, h interface{}) {
-	goji.Delete(p, h)
+func (ctr *Controller) RouteDelete(rt *Route) {
+	key := strings.ToUpper(rt.Method) + " " + rt.Pattern
+	if _, ok := ctr.Routes[key]; ok {
+		// exists
+	} else {
+		goji.Delete(rt.Pattern, handlerWrap(rt.Handler))
+		ctr.Routes[key] = rt
+	}
 }
-func RoutePatch(p interface{}, h interface{}) {
-	goji.Patch(p, h)
+func (ctr *Controller) RoutePatch(rt *Route) {
+	key := strings.ToUpper(rt.Method) + " " + rt.Pattern
+	if _, ok := ctr.Routes[key]; ok {
+		// exists
+	} else {
+		goji.Patch(rt.Pattern, handlerWrap(rt.Handler))
+		ctr.Routes[key] = rt
+	}
 }
-func RouteHead(p interface{}, h interface{}) {
-	goji.Head(p, h)
-}
-
-func SetDefaultRoutes(c ControllerInterface) {
-	c.DefaultRoutes(c)
+func (ctr *Controller) RouteHead(rt *Route) {
+	key := strings.ToUpper(rt.Method) + " " + rt.Pattern
+	if _, ok := ctr.Routes[key]; ok {
+		// exists
+	} else {
+		goji.Head(rt.Pattern, handlerWrap(rt.Handler))
+		ctr.Routes[key] = rt
+	}
 }
