@@ -66,8 +66,9 @@ func (ctr *Controller) Head(c *HttpContext) {
 	http.Error(c.Response, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
 
-func (ctr *Controller) AddRoute(rt *Route) {
-	switch strings.ToLower(rt.Method) {
+func (ctr *Controller) AddRoute(m string, p string, h Handler) {
+	rt := NewRoute(p, m, h)
+	switch strings.ToLower(m) {
 	case "get":
 		ctr.RouteGet(rt)
 	case "post":
@@ -87,6 +88,7 @@ func (ctr *Controller) AddRoute(rt *Route) {
 
 // controller default route
 // 默认路由, 如果已经定义了则忽略，没有定义则加上
+//func (ctr *Controller) DefaultRoutes() {
 func (ctr *Controller) DefaultRoutes(c ControllerInterface) {
 	// GET /{endpoint}
 	ctr.RouteGet(NewRoute("/"+ctr.Endpoint, "GET", c.Get))
